@@ -1,0 +1,51 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jul 14 17:38:23 2021
+
+@author: Clara Melguizo
+"""
+
+from collections import defaultdict
+
+
+MAX_ALLOWED_NA = 2
+def load_data(filename):
+     parsed_data = defaultdict(dict)
+     with open(filename) as f:
+        data = f.read()
+     for line in data.splitlines():
+         (strain, sequence, size) = line.rsplit(maxsplit=2)
+         if size == "NA":
+             parsed_data[strain][sequence]= None
+         else:
+            parsed_data[strain][sequence] = int(size)
+     return parsed_data
+def is_similar(strain1, strain2):
+    if len(strain1) != len(strain2):
+        return False
+    unknown_strain1_sizes = len([size for size in strain1.values() if size is None ])
+    unknown_strain2_sizes = len([size for size in strain2.values() if size is None ])
+    if unknown_strain1_sizes > MAX_ALLOWED_NA or unknown_strain2_sizes > MAX_ALLOWED_NA:
+        return False
+    for sequence in strain1:
+        strain1_sequence_size  = strain1[sequence]
+        strain2_sequence_size = strain2[sequence]
+        if strain1_sequence_size is None or strain2_sequence_size is None:
+            continue
+        if  not strain2_sequence_size - 1 <= strain1_sequence_size <= strain2_sequence_size + 1 :
+            return False
+    return True
+def main():
+    references = load_data("reference.txt")
+    database = load_data("database.txt")
+    equivalent_strains = []
+    for reference_strain in references:
+        for database_strain in database:
+            if is_similar(database[database_strain], references[reference_strain]):
+                equivalent_strains.append((database_strain, reference_strain))
+    if equivalent_strains:
+        for (database_strain, reference_strain) in equivalent_strains:
+            print(f"Similar strain found: {reference_strain}: {references[reference_strain]} ~= {database_strain}: {database[database_strain]}")
+    else:
+        print("No similarities found")
+main()
